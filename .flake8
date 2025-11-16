@@ -1,0 +1,6 @@
+[flake8]
+ignore = D203,C901,S311,S501,E800,A003,VNE003,A002,VNE003,Q000,Q001,I005,I001
+exclude = .git,__pycache__,env,venv
+max-complexity = 8
+max-line-length = 120
+per-file-ignores = __init__.py:F401

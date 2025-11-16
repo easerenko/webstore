@@ -1,0 +1,7 @@
+environment:
+    prod:
+      source:
+          api_url: "https://automationexercise.com/api"
+          base_url: "https://automationexercise.com/"
+          auth_url: "https://automationexercise.com/login"
+          products_url: "https://automationexercise.com/products"
