@@ -1,6 +1,6 @@
 import logging
-
 import allure
+import pytest
 import pytest_check as check
 
 from settings import config
@@ -12,6 +12,7 @@ from ui.locators.elements import PaymentDoneLocators as Locators
 
 
 @allure.title("Тест аутентификации пользователя")
+@pytest.mark.auth
 def test_login(web, create_user, user_info):
     web.load_page()
     web.enter_username(username=user_info["email"])
@@ -23,6 +24,7 @@ def test_login(web, create_user, user_info):
 
 
 @allure.title("Тест куки аутентификации пользователя")
+@pytest.mark.auth
 def test_user_cookies(web_auth):
     web, cookies, user_info = web_auth
     web.add_cookies(cookie=cookies)
