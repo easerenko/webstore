@@ -4,6 +4,7 @@ import pytest
 
 
 @allure.title("Тест метода получения списка товаров")
+@pytest.mark.product
 def test_product_list(api):
     resp = api.get_product_list()
 
@@ -15,6 +16,7 @@ def test_product_list(api):
 
 
 @allure.title("Тест метода получения списка брендов")
+@pytest.mark.product
 def test_brand_list(api):
     resp = api.get_brand_list()
 
@@ -26,6 +28,7 @@ def test_brand_list(api):
 
 
 @allure.title("Тест метода поиска товара")
+@pytest.mark.product
 @pytest.mark.parametrize("search_product", ["Tshirts", "Tops", "Jeans"])
 def test_search_product(api, search_product):
     resp = api.search_product(search_product)
