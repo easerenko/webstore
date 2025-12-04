@@ -1,5 +1,6 @@
 import logging
 import allure
+import pytest
 
 
 @allure.title("Тест метода получения списка товаров")
@@ -25,19 +26,18 @@ def test_brand_list(api):
 
 
 @allure.title("Тест метода поиска товара")
-def test_search_product(api):
-    search_product = "Tshirts"
-
+@pytest.mark.parametrize("search_product", ["Tshirts", "Tops", "Jeans"])
+def test_search_product(api, search_product):
     resp = api.search_product(search_product)
 
     logging.info("Проверка получения статус-кода 200")
     assert resp.status_code == 200
 
     logging.info(
-        f"Проверка наличия искомого товара {search_product} в ответе: "
+        f"Проверка наличия искомой категории товара {search_product} в ответе: "
         f"{resp.json()["products"][0]["category"]["category"]}"
     )
-    assert "Tshirts" in resp.json()["products"][0]["category"]["category"]
+    assert search_product in resp.json()["products"][0]["category"]["category"]
 
 
 @allure.title("Тест метода подтверждения существования учетной записи")
