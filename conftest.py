@@ -1,6 +1,8 @@
+import json
 import pytest
 import logging.config
 
+from datetime import datetime
 from os import path
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -21,6 +23,24 @@ logging.config.fileConfig(logging_file_path)
 
 def pytest_addoption(parser):
     parser.addini("headless", "Headless mode")
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus):
+    stats = terminalreporter.stats
+    results = {
+        'timestamp': datetime.now().isoformat(),
+        'exitstatus': exitstatus,
+        'tests': {}
+    }
+
+    for status in ['passed', 'failed', 'skipped', 'error']:
+        tests = stats.get(status, [])
+        results['tests'][status] = [item.nodeid for item in tests]
+
+    with open('test_results.json', 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+
+    terminalreporter.write_line("Результаты сохранены в test_results.json")
 
 
 @pytest.fixture(scope="session")
