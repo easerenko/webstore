@@ -1,0 +1,61 @@
+name: Test API Module
+
+on:
+  push:
+    paths:
+      - 'tests/api/test_api.py'
+      - 'tests/api/**'
+  pull_request:
+    paths:
+      - 'tests/api/test_api.py'
+      - 'tests/api/**'
+  workflow_dispatch:  # ручной запуск
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        pip install pytest requests pytest-httpx  # для API-тестов
+
+    - name: Run API tests
+      run: |
+        pytest -s -v \
+          tests/api/test_api.py \
+          --log-cli-level=INFO \
+          --log-file=test_api.log \
+          -o log_cli=true
+
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-test-logs
+        path: test_api.log
+
+    - name: Upload pytest report (JUnit XML)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-test-report
+        path: junit-*.xml
+
+    - name: Publish Test Results
+      uses: EnricoMus/daos-test-reporter-action@v1.1.0
+      if: always()
+      with:
+        junit-files: 'junit-*.xml'
