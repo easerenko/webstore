@@ -38,9 +38,9 @@ def test_search_product(api, search_product):
 
     logging.info(
         f"Проверка наличия искомой категории товара {search_product} в ответе: "
-        f"{resp.json()["products"][0]["category"]["category"]}"
+        f"{resp.json()['products'][0]['category']['category']}"
     )
-    assert search_product in resp.json()["products"][0]["category"]["category"]
+    assert search_product in resp.json()['products'][0]['category']['category']
 
 
 @allure.title("Тест метода подтверждения существования учетной записи")
