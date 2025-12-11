@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt || true
-        pip install pytest pytest-httpx webdriver-manager selenium
+        pip install pytest pytest-httpx webdriver-manager selenium allure-pytest
 
     - name: Run API tests
       run: |
@@ -44,5 +44,5 @@ jobs:
       with:
         name: test-results
         path: |
-          logs/test_api.log
-          junit/test-results.xml
+          logs/
+          junit/
