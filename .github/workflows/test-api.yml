@@ -9,7 +9,7 @@ on:
     paths:
       - 'tests/api/test_api.py'
       - 'tests/api/**'
-  workflow_dispatch:  # ручной запуск
+  workflow_dispatch:
 
 jobs:
   test:
@@ -27,20 +27,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        fi
-        pip install pytest requests pytest-httpx \
-          webdriver-manager selenium
+        pip install -r requirements.txt || true
+        pip install pytest pytest-httpx webdriver-manager selenium
 
     - name: Run API tests
       run: |
-        pytest -s -v \
-          tests/api/test_api.py \
-          --junitxml=junit/test-results.xml 
-          --log-cli-level=INFO \
+        mkdir -p logs junit
+        PYTHONPATH=. pytest -s -v tests/api/test_api.py \
+          --junitxml=junit/test-results.xml \
           --log-file=logs/test_api.log \
-          -o log_cli=true
+          --log-cli-level=INFO
 
     - name: Upload artifacts
       if: always()
