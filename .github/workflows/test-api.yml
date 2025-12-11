@@ -30,27 +30,23 @@ jobs:
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
         fi
-        pip install pytest requests pytest-httpx  # для API-тестов
+        pip install pytest requests pytest-httpx \
+          webdriver-manager selenium
 
     - name: Run API tests
       run: |
         pytest -s -v \
           tests/api/test_api.py \
-          --junitxml=junit-test-api.xml \
+          --junitxml=junit/test-results.xml 
           --log-cli-level=INFO \
-          --log-file=test_api.log \
+          --log-file=logs/test_api.log \
           -o log_cli=true
 
-    - name: Upload test logs
+    - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: api-test-logs
-        path: test_api.log
-
-    - name: Upload pytest report (JUnit XML)
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-test-report
-        path: junit-*.xml
+        name: test-results
+        path: |
+          logs/test_api.log
+          junit/test-results.xml
