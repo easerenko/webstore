@@ -36,6 +36,7 @@ jobs:
       run: |
         pytest -s -v \
           tests/api/test_api.py \
+          --junitxml=junit-test-api.xml \
           --log-cli-level=INFO \
           --log-file=test_api.log \
           -o log_cli=true
@@ -53,9 +54,3 @@ jobs:
       with:
         name: api-test-report
         path: junit-*.xml
-
-    - name: Publish Test Results
-      uses: EnricoMus/daos-test-reporter-action@v1.1.0
-      if: always()
-      with:
-        junit-files: 'junit-*.xml'
