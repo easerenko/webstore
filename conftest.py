@@ -138,6 +138,8 @@ def web_auth(api, web):
     api.create_user(user_data=user_info)
 
     web.load_page()
+    web.close_person_data_modal()
+
     web.enter_username(user_info["email"])
     web.enter_password(user_info["password"])
     web.click_login_button()
