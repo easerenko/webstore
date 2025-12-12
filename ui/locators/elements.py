@@ -56,6 +56,7 @@ class PaymentLocators:
     # Локатор для поля ввода года истечения срока действия карты:
     EXPIRY_YEAR_ENTER = (By.CSS_SELECTOR, "#payment-form [name='expiry_year']")
 
+
 class PaymentDoneLocators:
     """
     Локаторы страницы завершения заказа

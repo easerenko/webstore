@@ -1,0 +1,63 @@
+name: Test UI Module
+
+on:
+  push:
+    paths:
+      - 'tests/ui/test_ui.py'
+      - 'tests/ui/**'
+  pull_request:
+    paths:
+      - 'tests/ui/test_ui.py'
+      - 'tests/ui/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb  # виртуальный дисплей для headless Chrome
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt || true
+        pip install pytest selenium webdriver-manager allure-pytest pytest-xvfb
+
+    - name: Run UI tests
+      run: |
+        mkdir -p logs junit allure-results
+        xvfb-run -a PYTHONPATH=. pytest -s -v tests/ui/test_ui.py \
+          --alluredir=allure-results \
+          --junitxml=junit/test-results.xml \
+          --log-file=logs/test_ui.log \
+          --log-cli-level=INFO \
+          --headed=False
+
+    - name: Generate Allure report
+      if: always()
+      uses: simple-elf/allure-report-action@master
+      with:
+        allure_results: allure-results
+        report_title: UI Tests Report
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ui-test-results
+        path: |
+          logs/
+          junit/
+          allure-results/
