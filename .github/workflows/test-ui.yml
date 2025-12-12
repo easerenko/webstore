@@ -38,7 +38,7 @@ jobs:
     - name: Run UI tests
       run: |
         mkdir -p logs junit allure-results
-        xvfb-run -a PYTHONPATH=. pytest -s -v tests/ui/test_ui.py \
+        PYTHONPATH=. xvfb-run -a pytest -s -v tests/ui/test_ui.py \
           --alluredir=allure-results \
           --junitxml=junit/test-results.xml \
           --log-file=logs/test_ui.log \
