@@ -26,3 +26,4 @@ urllib3==2.0.2
 wsproto==1.2.0
 webdriver-manager
 allure-pytest
+pytest-check
