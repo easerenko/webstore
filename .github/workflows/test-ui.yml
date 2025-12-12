@@ -14,6 +14,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -59,3 +63,10 @@ jobs:
           logs/
           junit/
           allure-results/
+
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: junit/test-results.xml
+        github_token: ${{ secrets.GITHUB_TOKEN }}
