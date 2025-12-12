@@ -42,8 +42,7 @@ jobs:
           --alluredir=allure-results \
           --junitxml=junit/test-results.xml \
           --log-file=logs/test_ui.log \
-          --log-cli-level=INFO \
-          --headed=False
+          --log-cli-level=INFO
 
     - name: Generate Allure report
       if: always()
