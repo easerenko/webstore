@@ -49,7 +49,6 @@ jobs:
       uses: simple-elf/allure-report-action@master
       with:
         allure_results: allure-results
-        report_title: UI Tests Report
 
     - name: Upload artifacts
       if: always()
