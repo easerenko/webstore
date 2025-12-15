@@ -73,6 +73,7 @@ def user_info():
     }
     return data
 
+
 @pytest.fixture
 def card_info():
     fake = Fake()
@@ -85,6 +86,7 @@ def card_info():
         "cvc": fake.card_cvc()
     }
     return data
+
 
 @pytest.fixture
 def create_user(api, user_info):
@@ -111,6 +113,7 @@ def web():
 
     yield LoginPage(base_url=config()['source']['base_url'], driver=browser)
     browser.quit()
+
 
 @pytest.fixture(scope="session")
 def web_auth(api, web):
@@ -150,3 +153,17 @@ def web_auth(api, web):
     yield web, cookies, user_info
 
     api.delete_user(email=user_info["email"], password=user_info["password"])
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+
+    if rep.when == "call" and rep.failed:
+        nodeid = item.nodeid
+        filename = nodeid.split("::")[0]
+        lineno = item.location[1]
+
+        print(f"::error file={filename},line={lineno} ::❌ ОШИБКА в {filename}:{lineno}")
+        print(f"::error ::{rep.longreprtext}")
