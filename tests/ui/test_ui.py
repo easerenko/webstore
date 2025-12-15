@@ -15,7 +15,7 @@ from ui.locators.elements import PaymentDoneLocators as Locators
 @pytest.mark.auth
 def test_login(web, create_user, user_info):
     web.load_page()
-    web.close_person_data_modal()
+    # web.close_person_data_modal()
 
     web.enter_username(username=user_info["email"])
     web.enter_password(password=user_info["password"])
