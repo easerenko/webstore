@@ -1,4 +1,6 @@
 import json
+import os
+
 import pytest
 import logging.config
 
@@ -161,9 +163,13 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
 
     if rep.when == "call" and rep.failed:
-        nodeid = item.nodeid
-        filename = nodeid.split("::")[0]
+        # nodeid = item.nodeid
+        # filename = nodeid.split("::")[0]
+        filename = item.location[0]
         lineno = item.location[1]
 
-        print(f"::error file={filename},line={lineno} ::❌ ОШИБКА в {filename}:{lineno}")
+        rel_path = filename.replace(os.getcwd() + os.sep, '')
+
+        # print(f"::error file={filename},line={lineno} ::❌ ОШИБКА в {filename}:{lineno}")
+        print(f"::error file={rel_path},line={lineno} ::❌ ОШИБКА в тесте {item.name}")
         print(f"::error ::{rep.longreprtext}")
