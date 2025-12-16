@@ -54,9 +54,9 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
             if classname:
                 file_parts = classname.split(".")
                 if len(file_parts) > 1:
-                    file_path = f"tests/{file_parts[-1]}.py"
+                    file_path = f"tests/ui/{file_parts[-1]}.py"
                 else:
-                    file_path = f"tests/{classname}.py"
+                    file_path = f"tests/ui/{classname}.py"
             else:
                 file_path = "tests/ui/test_ui.py"
 
