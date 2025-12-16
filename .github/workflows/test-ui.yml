@@ -73,10 +73,10 @@ jobs:
           junit/
           allure-results/
           
-    - name: Summarize test results
-      if: always()
-      run: |
-        python .github/scripts/publish_test_summary.py junit/test-results.xml
+#    - name: Summarize test results
+#      if: always()
+#      run: |
+#        python .github/scripts/publish_test_summary.py junit/test-results.xml
 
 #    - name: Publish Test Results
 #      if: always()

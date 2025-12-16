@@ -6,18 +6,22 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import List, Dict, Optional
 
 import requests
 
-
 CHECKS_API_URL = "https://api.github.com/repos/{owner}/{repo}/check-runs"
+ANNOTATIONS_URL = "https://api.github.com/repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"
 API_VERSION = "2022-11-28"
 
 
-def parse_junit(report_path: Path):
+def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
+    """
+    Парсинг JUnit XML
+    """
     if not report_path.is_file():
         print(f"::warning ::JUnit report not found at {report_path}")
-        return None, None
+        return None, []
 
     tree = ET.parse(report_path)
     root = tree.getroot()
@@ -29,7 +33,7 @@ def parse_junit(report_path: Path):
         suites = root.findall(".//testsuite")
 
     total = failures = errors = skipped = 0
-    failed_tests = []
+    annotations = []
 
     for suite in suites:
         total += int(suite.attrib.get("tests", 0))
@@ -38,24 +42,31 @@ def parse_junit(report_path: Path):
         skipped += int(suite.attrib.get("skipped", 0))
 
         for case in suite.findall("testcase"):
-            name = case.attrib.get("name", "")
+            name = case.attrib.get("name", "unknown")
             classname = case.attrib.get("classname", "")
+
             failure = case.find("failure")
             error = case.find("error")
+
             if failure is not None or error is not None:
-                msg = ""
                 node = failure or error
-                if node is not None:
-                    msg = (node.attrib.get("message", "") or "").strip()
-                    if not msg and node.text:
-                        msg = node.text.strip()
-                failed_tests.append(
-                    {
-                        "name": name,
-                        "classname": classname,
-                        "message": msg or "Test failed",
-                    }
-                )
+                message = node.attrib.get("message", "").strip()
+                if not message and node.text:
+                    message = node.text.strip()[:1000]
+
+                file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
+
+                annotations.append({
+                    "path": file_path,
+                    "start_line": 1,
+                    "end_line": 1,
+                    "start_column": 0,
+                    "end_column": 0,
+                    "annotation_level": "failure",
+                    "title": name,
+                    "message": message or "Test failed",
+                    "raw_details": f"{classname}.{name}"
+                })
 
     passed = total - failures - errors - skipped
     stats = {
@@ -65,79 +76,15 @@ def parse_junit(report_path: Path):
         "errors": errors,
         "skipped": skipped,
     }
-    return stats, failed_tests
+    return stats, annotations
 
 
-def build_output(stats, failed_tests, check_name: str):
-    total = stats["total"]
-    passed = stats["passed"]
-    failures = stats["failures"]
-    errors = stats["errors"]
-    skipped = stats["skipped"]
-
-    title = f"{check_name}: {passed}/{total} passed"
-    summary_lines = [
-        f"**Total**: {total}",
-        f"**Passed**: {passed}",
-        f"**Failed**: {failures}",
-        f"**Errors**: {errors}",
-        f"**Skipped**: {skipped}",
-    ]
-
-    details_lines = []
-    if failed_tests:
-        details_lines.append("\n### Failed tests:\n")
-        for t in failed_tests[:20]:
-            details_lines.append(
-                f"- `{t['classname']}.{t['name']}` – {t['message']}"
-            )
-        if len(failed_tests) > 20:
-            details_lines.append(
-                f"\n… и ещё {len(failed_tests) - 20} падений."
-            )
-
-    output = {
-        "title": title,
-        "summary": "\n".join(summary_lines),
-        "text": "\n".join(details_lines) if details_lines else "",
-    }
-
-    conclusion = "success"
-    if failures or errors:
-        conclusion = "failure"
-
-    return output, conclusion
-
-
-def create_check_run(name: str, output: dict, conclusion: str):
+def create_check_run_step1(name: str, head_sha: str, owner: str, repo: str) -> int:
+    """
+    Создание Check Run со статусом in_progress и возвращает ID
+    """
     token = os.environ.get("GITHUB_TOKEN")
-    if not token:
-        print("::error ::GITHUB_TOKEN is not set")
-        sys.exit(1)
-
-    repo_full = os.environ.get("GITHUB_REPOSITORY")
-    if not repo_full:
-        print("::error ::GITHUB_REPOSITORY is not set")
-        sys.exit(1)
-    owner, repo = repo_full.split("/")
-
-    head_sha = os.environ.get("GITHUB_SHA")
-    if not head_sha:
-        print("::error ::GITHUB_SHA is not set")
-        sys.exit(1)
-
     url = CHECKS_API_URL.format(owner=owner, repo=repo)
-
-    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-    payload = {
-        "name": name,
-        "head_sha": head_sha,
-        "status": "completed",
-        "conclusion": conclusion,
-        "completed_at": now_iso,
-        "output": output,
-    }
 
     headers = {
         "Accept": "application/vnd.github+json",
@@ -145,35 +92,115 @@ def create_check_run(name: str, output: dict, conclusion: str):
         "X-GitHub-Api-Version": API_VERSION,
     }
 
-    resp = requests.post(url, headers=headers, data=json.dumps(payload))
-    if resp.status_code >= 300:
-        print(f"::error ::Failed to create check run: {resp.status_code} {resp.text}")
-        sys.exit(1)
-    else:
-        data = resp.json()
-        html_url = data.get("html_url")
-        print(f"Created check run: {html_url}")
+    payload = {
+        "name": name,
+        "head_sha": head_sha,
+        "status": "in_progress",
+        "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
+    resp.raise_for_status()
+
+    data = resp.json()
+    print(f"✅ Created check run: {data['html_url']} (ID: {data['id']})")
+    return data["id"]
+
+
+def add_annotations(check_run_id: int, annotations: List[Dict], owner: str, repo: str):
+    """
+    Добавление annotations к Check Run
+    """
+    if not annotations:
+        return
+
+    token = os.environ.get("GITHUB_TOKEN")
+    url = ANNOTATIONS_URL.format(owner=owner, repo=repo, check_run_id=check_run_id)
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": API_VERSION,
+    }
+
+    for i in range(0, len(annotations), 50):
+        batch = annotations[i:i + 50]
+        resp = requests.post(url, headers=headers, json=batch)
+        if resp.status_code >= 300:
+            print(f"::warning ::Failed to add annotations batch: {resp.status_code}")
+        else:
+            print(f"✅ Added {len(batch)} annotations")
+
+
+def update_check_run(check_run_id: int, output: dict, conclusion: str, owner: str, repo: str):
+    """
+    Завершение Check Run
+    """
+    token = os.environ.get("GITHUB_TOKEN")
+    url = f"{CHECKS_API_URL.format(owner=owner, repo=repo)}/{check_run_id}"
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": API_VERSION,
+    }
+
+    payload = {
+        "status": "completed",
+        "conclusion": conclusion,
+        "completed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "output": output,
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
+    resp.raise_for_status()
+    print(f"✅ Check run completed: {conclusion}")
+
+
+def build_output(stats: dict, failed_count: int, check_name: str) -> tuple[dict, str]:
+    total = stats["total"]
+    passed = stats["passed"]
+    failures = stats["failures"]
+    errors = stats["errors"]
+    skipped = stats["skipped"]
+
+    title = f"{check_name}: {passed}/{total}"
+    summary = f"""**Results**: {passed}/{total} passed
+        **Failed**: {failures} | **Errors**: {errors} | **Skipped**: {skipped}"""
+
+    conclusion = "success" if failures == 0 and errors == 0 else "failure"
+
+    output = {
+        "title": title,
+        "summary": summary,
+        "text": f"See annotations for detailed failures ({failed_count} failed tests)."
+    }
+    return output, conclusion
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--report", required=True, help="Path to JUnit XML report")
+    parser.add_argument("--report", required=True, help="Path to JUnit XML")
     parser.add_argument("--name", default="Tests", help="Check run name")
     args = parser.parse_args()
 
     report_path = Path(args.report)
-    stats, failed_tests = parse_junit(report_path)
+    stats, annotations = parse_junit(report_path)
+
     if not stats:
-        output = {
-            "title": f"{args.name}: no report",
-            "summary": "JUnit report not found.",
-            "text": "",
-        }
-        create_check_run(args.name, output, "neutral")
+        owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
+        check_id = create_check_run_step1(args.name, os.environ["GITHUB_SHA"], owner, repo)
+        output = {"title": f"{args.name}: no report", "summary": "No JUnit report found"}
+        update_check_run(check_id, output, "neutral", owner, repo)
         return
 
-    output, conclusion = build_output(stats, failed_tests, args.name)
-    create_check_run(args.name, output, conclusion)
+    owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
+    head_sha = os.environ["GITHUB_SHA"]
+
+    check_id = create_check_run_step1(args.name, head_sha, owner, repo)
+    add_annotations(check_id, annotations, owner, repo)
+    output, conclusion = build_output(stats, len(annotations), args.name)
+    update_check_run(check_id, output, conclusion, owner, repo)
 
 
 if __name__ == "__main__":
