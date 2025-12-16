@@ -51,7 +51,14 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
             if failure is None and error is None:
                 continue
 
-            file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
+            if classname:
+                file_parts = classname.split(".")
+                if len(file_parts) > 1:
+                    file_path = f"tests/{file_parts[-1]}.py"
+                else:
+                    file_path = f"tests/{classname}.py"
+            else:
+                file_path = "tests/ui/test_ui.py"
 
             message_elem = failure if failure is not None else error
             msg_attr = (message_elem.attrib.get("message") or "").strip()
@@ -61,16 +68,18 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
                 text = (message_elem.text or "").strip()
                 message = text[:500] if text else "Test failed"
 
-                annotations.append({
-                    "path": file_path,
-                    "start_line": 1,
-                    "end_line": 1,
-                    "start_column": 0,
-                    "end_column": 80,
-                    "annotation_level": "failure",
-                    "title": name,
-                    "message": message or "Test failed"
-                })
+            print(f"DEBUG: path='{file_path}', title='{name}'")
+
+            annotations.append({
+                "path": file_path,
+                "start_line": 1,
+                "end_line": 1,
+                "start_column": 0,
+                "end_column": 80,
+                "annotation_level": "failure",
+                "title": name,
+                "message": message or "Test failed"
+            })
 
             # message = "Test failed"
             # if failure is not None:
