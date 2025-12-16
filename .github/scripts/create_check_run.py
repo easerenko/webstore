@@ -158,11 +158,11 @@ def create_check_run_step1(name: str, head_sha: str, owner: str, repo: str) -> i
 def add_annotations(check_id, annotations, owner, repo, max_retries=3):
     """Add annotations с retry"""
     url = f"https://api.github.com/repos/{owner}/{repo}/check-runs/{check_id}/annotations"
+    token = os.environ.get("GITHUB_TOKEN")
 
     for attempt in range(max_retries):
         try:
-            response = requests.post(url, json=annotations[:10],  # max 10 per batch
-                                     headers={"Authorization": f"token {os.environ.get("GITHUB_TOKEN")}"})
+            response = requests.post(url, json=annotations[:10], headers={"Authorization": f"token {token}"})
 
             if response.status_code == 201:
                 print(f"✅ Added {len(annotations)} annotations")
@@ -176,6 +176,7 @@ def add_annotations(check_id, annotations, owner, repo, max_retries=3):
             time.sleep(2)
 
     print("⚠️ Failed to add annotations after retries")
+
 
 def update_check_run(check_run_id: int, output: dict, conclusion: str, owner: str, repo: str):
     """
