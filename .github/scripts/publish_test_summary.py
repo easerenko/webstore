@@ -63,7 +63,7 @@ def annotate_failures(root):
         title = f"Test failed: {name}"
 
         # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
-        print(f"::error title={title} file={file_hint} line=1 ::{message}")
+        print(f"::error title={title} file={file_hint} ::{message}")
         failure_count += 1
 
     print(f"✅ Annotated {failure_count} failures")
