@@ -48,14 +48,18 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
             failure = case.find("failure")
             error = case.find("error")
 
-            if failure is not None or error is not None:
-                file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
+            if failure is None and error is None:
+                continue
 
-                message_elem = failure or error
-                message = (message_elem.attrib.get("message", "") or
-                           (message_elem.text.strip()[:500] if message_elem.text else "Test failed"))
-                if not message and message_elem.text:
-                    message = message_elem.text.strip()[:500]
+            file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
+
+            message_elem = failure if failure is not None else error
+            msg_attr = (message_elem.attrib.get("message") or "").strip()
+            if msg_attr:
+                message = msg_attr
+            else:
+                text = (message_elem.text or "").strip()
+                message = text[:500] if text else "Test failed"
 
                 annotations.append({
                     "path": file_path,
