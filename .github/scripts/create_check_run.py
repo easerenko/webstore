@@ -203,6 +203,7 @@ def main():
     head_sha = os.environ["GITHUB_SHA"]
 
     check_id = create_check_run_step1(args.name, head_sha, owner, repo)
+    time.sleep(1)
     add_annotations(check_id, annotations, owner, repo)
     output, conclusion = build_output(stats, len(annotations), args.name)
     update_check_run(check_id, output, conclusion, owner, repo)
