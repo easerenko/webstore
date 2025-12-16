@@ -201,21 +201,19 @@ def main():
     parser.add_argument("--name", default="Tests", help="Check run name")
     args = parser.parse_args()
 
+    owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
+    head_sha = os.environ["GITHUB_SHA"]
+    check_id = create_check_run_step1(args.name, head_sha, owner, repo)
+    time.sleep(3)
+
     report_path = Path(args.report)
     stats, annotations = parse_junit(report_path)
 
     if not stats:
-        owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
-        check_id = create_check_run_step1(args.name, os.environ["GITHUB_SHA"], owner, repo)
         output = {"title": f"{args.name}: no report", "summary": "No JUnit report found"}
         update_check_run(check_id, output, "neutral", owner, repo)
         return
 
-    owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
-    head_sha = os.environ["GITHUB_SHA"]
-
-    check_id = create_check_run_step1(args.name, head_sha, owner, repo)
-    time.sleep(1)
     add_annotations(check_id, annotations, owner, repo)
     output, conclusion = build_output(stats, len(annotations), args.name)
     update_check_run(check_id, output, conclusion, owner, repo)
