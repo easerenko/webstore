@@ -70,31 +70,16 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
 
             print(f"DEBUG: path='{file_path}', title='{name}'")
 
-            ###
-            path = case.find('file') or case.get('file')
-            line = case.get('line', 1)
-
             annotations.append({
-                "path": str(path) if path else "unknown.py",
-                "start_line": int(line),
-                "end_line": int(line),
+                "path": file_path,
+                "start_line": 1,
+                "end_line": 1,
                 "start_column": 0,
                 "end_column": 80,
                 "annotation_level": "failure",
-                "message": f"{case.find('name') or 'Test failed'}\n{case.find('failure')[-1].text[:200]}...",
-                "title": case.get('name', 'Test failed')
+                "title": name,
+                "message": message or "Test failed"
             })
-
-            # annotations.append({
-            #     "path": file_path,
-            #     "start_line": 1,
-            #     "end_line": 1,
-            #     "start_column": 0,
-            #     "end_column": 80,
-            #     "annotation_level": "failure",
-            #     "title": name,
-            #     "message": message or "Test failed"
-            # })
 
     passed = total - failures - errors - skipped
     stats = {
