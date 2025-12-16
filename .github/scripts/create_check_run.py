@@ -52,7 +52,8 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
                 file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
 
                 message_elem = failure or error
-                message = message_elem.attrib.get("message", "").strip()
+                message = (message_elem.attrib.get("message", "") or
+                           (message_elem.text.strip()[:500] if message_elem.text else "Test failed"))
                 if not message and message_elem.text:
                     message = message_elem.text.strip()[:500]
 
