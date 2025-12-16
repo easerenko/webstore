@@ -183,18 +183,6 @@ def build_output(stats: dict, failed_count: int, check_name: str) -> tuple[dict,
     return output, conclusion
 
 
-def set_outputs(stats):
-    """
-    Set GitHub Actions outputs
-    """
-    total = stats['passed'] + stats['failed'] + stats['skipped']
-
-    print(f"::set-output name=total::{total}")
-    print(f"::set-output name=passed::{stats['passed']}")
-    print(f"::set-output name=failed::{stats['failed']}")
-    print(f"::set-output name=skipped::{stats['skipped']}")
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", required=True, help="Path to JUnit XML")
@@ -203,8 +191,8 @@ def main():
 
     owner, repo = os.environ["GITHUB_REPOSITORY"].split("/")
     head_sha = os.environ["GITHUB_SHA"]
+
     check_id = create_check_run_step1(args.name, head_sha, owner, repo)
-    time.sleep(3)
 
     report_path = Path(args.report)
     stats, annotations = parse_junit(report_path)
@@ -214,10 +202,10 @@ def main():
         update_check_run(check_id, output, "neutral", owner, repo)
         return
 
+    time.sleep(2)
     add_annotations(check_id, annotations, owner, repo)
     output, conclusion = build_output(stats, len(annotations), args.name)
     update_check_run(check_id, output, conclusion, owner, repo)
-    set_outputs(stats)
 
 
 if __name__ == "__main__":
