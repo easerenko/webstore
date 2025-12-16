@@ -39,6 +39,7 @@ def parse_junit(path: Path):
     }
 
 def annotate_failures(root):
+    failure_count = 0
     for tc in root.findall(".//testcase"):
         failure = tc.find("failure")
         error = tc.find("error")
@@ -46,16 +47,26 @@ def annotate_failures(root):
         if failure is None and error is None:
             continue
 
-        failed_element = failure or error
+        if failure is not None:
+            failed_element = failure
+        elif error is not None:
+            failed_element = error
+        else:
+            print("⚠️ Unexpected: both failure and error are None!")
+            continue
+
         classname = tc.attrib.get("classname", "")
         name = tc.attrib.get("name", "")
-        message = failed_element.attrib.get("message", "Test failed without message").strip()
+        message = failed_element.attrib.get("message", "Test failed").strip()
 
-        file_hint = classname.replace(".", "/") + ".py" if classname else ""
+        file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
         title = f"Test failed: {name}"
 
         # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
-        print(f"::error title={title} file={classname} ::{message}")
+        print(f"::error title={title} file={file_hint} line=1 ::{message}")
+        failure_count += 1
+
+    print(f"✅ Annotated {failure_count} failures")
 
 def main():
     if len(sys.argv) < 2:
