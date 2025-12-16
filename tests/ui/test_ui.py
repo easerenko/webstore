@@ -24,8 +24,6 @@ def test_login(web, create_user, user_info):
     logging.info("Проверка загрузки главной страницы после аутентификации пользователя")
     assert web.get_current_url() == config()['source']['base_url']
 
-    assert web.get_current_url() == "https://automationexercise.com/login"
-
 
 @allure.title("Тест куки аутентификации пользователя")
 @pytest.mark.auth
