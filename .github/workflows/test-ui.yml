@@ -14,10 +14,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      contents: read
-      pull-requests: write
+#    permissions:
+#      checks: write
+#      contents: read
+#      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -48,14 +48,14 @@ jobs:
           --log-file=logs/test_ui.log \
           --log-cli-level=INFO
 
-    - name: Create GitHub Check Run from JUnit
-      if: always()
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        python .github/scripts/create_check_run.py \
-          --report junit/test-results.xml \
-          --name "Test Results"
+#    - name: Create GitHub Check Run from JUnit
+#      if: always()
+#      env:
+#        GITHUB_TOKEN: ${{ github.token }}
+#      run: |
+#        python .github/scripts/create_check_run.py \
+#          --report junit/test-results.xml \
+#          --name "Test Results"
 
     - name: Generate Allure report
       if: always()

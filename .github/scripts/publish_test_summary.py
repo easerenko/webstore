@@ -42,17 +42,20 @@ def annotate_failures(root):
     for tc in root.findall(".//testcase"):
         failure = tc.find("failure")
         error = tc.find("error")
+
         if failure is None and error is None:
             continue
 
+        failed_element = failure or error
         classname = tc.attrib.get("classname", "")
         name = tc.attrib.get("name", "")
-        message = (failure or error).attrib.get("message", "").strip()
+        message = failed_element.attrib.get("message", "Test failed without message").strip()
 
         file_hint = classname.replace(".", "/") + ".py" if classname else ""
         title = f"Test failed: {name}"
 
-        print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
+        # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
+        print(f"::error title={title} file={classname} ::{message}")
 
 def main():
     if len(sys.argv) < 2:
