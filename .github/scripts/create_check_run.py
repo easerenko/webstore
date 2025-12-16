@@ -70,41 +70,31 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
 
             print(f"DEBUG: path='{file_path}', title='{name}'")
 
+            ###
+            path = case.find('file') or case.get('file')
+            line = case.get('line', 1)
+
             annotations.append({
-                "path": file_path,
-                "start_line": 1,
-                "end_line": 1,
+                "path": str(path) if path else "unknown.py",
+                "start_line": int(line),
+                "end_line": int(line),
                 "start_column": 0,
                 "end_column": 80,
                 "annotation_level": "failure",
-                "title": name,
-                "message": message or "Test failed"
+                "message": f"{case.find('name').text or 'Test failed'}\n{case.find('failure')[-1].text[:200]}...",
+                "title": case.get('name', 'Test failed')
             })
 
-            # message = "Test failed"
-            # if failure is not None:
-            #     message = failure.attrib.get("message", "").strip()
-            #     if not message and failure.text:
-            #         message = failure.text.strip()[:1000]
-            # elif error is not None:
-            #     message = error.attrib.get("message", "").strip()
-            #     if not message and error.text:
-            #         message = error.text.strip()[:1000]
-            #
-            # if failure is not None or error is not None:
-            #     file_path = classname.split(".")[-1] + ".py" if classname else "test_file.py"
-            #
-            #     annotations.append({
-            #         "path": file_path,
-            #         "start_line": 1,
-            #         "end_line": 1,
-            #         "start_column": 0,
-            #         "end_column": 0,
-            #         "annotation_level": "failure",
-            #         "title": name,
-            #         "message": message,
-            #         "raw_details": f"{classname}.{name}"
-            #     })
+            # annotations.append({
+            #     "path": file_path,
+            #     "start_line": 1,
+            #     "end_line": 1,
+            #     "start_column": 0,
+            #     "end_column": 80,
+            #     "annotation_level": "failure",
+            #     "title": name,
+            #     "message": message or "Test failed"
+            # })
 
     passed = total - failures - errors - skipped
     stats = {
@@ -145,51 +135,51 @@ def create_check_run_step1(name: str, head_sha: str, owner: str, repo: str) -> i
     return data["id"]
 
 
-# def add_annotations(check_run_id: int, annotations: List[Dict], owner: str, repo: str):
-#     """
-#     Добавление annotations к Check Run
-#     """
-#     if not annotations:
-#         return
-#
-#     token = os.environ.get("GITHUB_TOKEN")
-#     url = ANNOTATIONS_URL.format(owner=owner, repo=repo, check_run_id=check_run_id)
-#
-#     headers = {
-#         "Accept": "application/vnd.github+json",
-#         "Authorization": f"Bearer {token}",
-#         "X-GitHub-Api-Version": API_VERSION,
-#     }
-#
-#     for i in range(0, len(annotations), 50):
-#         batch = annotations[i:i + 50]
-#         resp = requests.post(url, headers=headers, json=batch)
-#         if resp.status_code >= 300:
-#             print(f"::warning ::Failed to add annotations batch: {resp.status_code}")
-#         else:
-#             print(f"✅ Added {len(batch)} annotations")
+def add_annotations(check_run_id: int, annotations: List[Dict], owner: str, repo: str):
+    """
+    Добавление annotations к Check Run
+    """
+    if not annotations:
+        return
 
-def add_annotations(check_id, annotations, owner, repo, max_retries=3):
-    """Add annotations с retry"""
-    url = f"https://api.github.com/repos/{owner}/{repo}/check-runs/{check_id}/annotations"
     token = os.environ.get("GITHUB_TOKEN")
+    url = ANNOTATIONS_URL.format(owner=owner, repo=repo, check_run_id=check_run_id)
 
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(url, json=annotations[:10], headers={"Authorization": f"token {token}"})
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "X-GitHub-Api-Version": API_VERSION,
+    }
 
-            if response.status_code == 201:
-                print(f"✅ Added {len(annotations)} annotations")
-                return
-            else:
-                print(f"⚠️ Attempt {attempt + 1}: {response.status_code}")
-                time.sleep(2 ** attempt)  # exponential backoff
+    for i in range(0, len(annotations), 50):
+        batch = annotations[i:i + 50]
+        resp = requests.post(url, headers=headers, json=batch)
+        if resp.status_code >= 300:
+            print(f"::warning ::Failed to add annotations batch: {resp.status_code}")
+        else:
+            print(f"✅ Added {len(batch)} annotations")
 
-        except Exception as e:
-            print(f"❌ Annotation error: {e}")
-            time.sleep(2)
-
-    print("⚠️ Failed to add annotations after retries")
+# def add_annotations(check_id, annotations, owner, repo, max_retries=3):
+#     """Add annotations с retry"""
+#     url = f"https://api.github.com/repos/{owner}/{repo}/check-runs/{check_id}/annotations"
+#     token = os.environ.get("GITHUB_TOKEN")
+#
+#     for attempt in range(max_retries):
+#         try:
+#             response = requests.post(url, json=annotations[:10], headers={"Authorization": f"token {token}"})
+#
+#             if response.status_code == 201:
+#                 print(f"✅ Added {len(annotations)} annotations")
+#                 return
+#             else:
+#                 print(f"⚠️ Attempt {attempt + 1}: {response.status_code}")
+#                 time.sleep(2 ** attempt)  # exponential backoff
+#
+#         except Exception as e:
+#             print(f"❌ Annotation error: {e}")
+#             time.sleep(2)
+#
+#     print("⚠️ Failed to add annotations after retries")
 
 
 def update_check_run(check_run_id: int, output: dict, conclusion: str, owner: str, repo: str):
