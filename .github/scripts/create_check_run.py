@@ -157,7 +157,7 @@ def update_check_run(check_run_id: int, output: dict, conclusion: str, owner: st
         "output": output,
     }
 
-    resp = requests.post(url, headers=headers, json=payload)
+    resp = requests.patch(url, headers=headers, json=payload)
     resp.raise_for_status()
     print(f"✅ Check run completed: {conclusion}")
 
