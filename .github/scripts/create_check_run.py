@@ -81,7 +81,7 @@ def parse_junit(report_path: Path) -> tuple[Optional[dict], List[Dict]]:
                 "start_column": 0,
                 "end_column": 80,
                 "annotation_level": "failure",
-                "message": f"{case.find('name').text or 'Test failed'}\n{case.find('failure')[-1].text[:200]}...",
+                "message": f"{case.find('name') or 'Test failed'}\n{case.find('failure')[-1].text[:200]}...",
                 "title": case.get('name', 'Test failed')
             })
 
