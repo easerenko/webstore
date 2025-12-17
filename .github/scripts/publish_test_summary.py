@@ -92,8 +92,18 @@ def normalize_filename(classname: str) -> str:
     if not classname or '.' not in classname:
         return "unknown.py"
 
-    parts = classname.rsplit('.', 1)
-    base_path = parts[0]
+    parts = classname.split('.')
+
+    i = len(parts) - 1
+    while i >= 0:
+        if not parts[i].startswith('Test'):
+            break
+        i -= 1
+
+    if i >= 0:
+        base_path = '.'.join(parts[:i + 1])
+    else:
+        base_path = '.'.join(parts)
 
     return base_path.replace(".", "/") + ".py"
 
