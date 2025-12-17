@@ -11,6 +11,7 @@ def parse_junit(path: Path):
 
     tree = ET.parse(path)
     root = tree.getroot()
+    test_details = []
 
     total = 0
     failures = 0
@@ -29,6 +30,26 @@ def parse_junit(path: Path):
         errors += int(suite.attrib.get("errors", 0))
         skipped += int(suite.attrib.get("skipped", 0))
 
+        for tc in suite.findall(".//testcase"):
+            name = tc.attrib.get("name", "unknown")
+            classname = tc.attrib.get("classname", "unknown")
+            time = float(tc.attrib.get("time", 0))
+
+            status = "passed"
+            if tc.find("failure") is not None:
+                status = "failed"
+            elif tc.find("error") is not None:
+                status = "error"
+            elif tc.find("skipped") is not None:
+                status = "skipped"
+
+            test_details.append({
+                "name": name,
+                "classname": classname,
+                "time": time,
+                "status": status
+            })
+
     passed = total - failures - errors - skipped
     return {
         "total": total,
@@ -36,6 +57,7 @@ def parse_junit(path: Path):
         "failures": failures,
         "errors": errors,
         "skipped": skipped,
+        "test_details": test_details
     }
 
 def annotate_failures(root):
@@ -59,8 +81,15 @@ def annotate_failures(root):
         name = tc.attrib.get("name", "")
         message = failed_element.attrib.get("message", "Test failed").strip()
 
+        raw_time = tc.attrib.get("time", "0")
+        try:
+            time = float(raw_time)
+        except ValueError:
+            time = 0.0
+
         file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
-        title = f"Test failed: {name}"
+        time_str = f" ({time:.2f}s)" if time > 0 else ""
+        title = f"Test failed: {name}{time_str}"
 
         # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
         print(f"::error title={title} file={file_hint} ::{message}")
@@ -86,25 +115,40 @@ def main():
     failures = stats["failures"]
     errors = stats["errors"]
     skipped = stats["skipped"]
+    test_details = stats["test_details"]
 
     print()
     print("=== TEST SUMMARY ===")
     print(f"Total:    {total}")
     print(f"Passed:   {passed} ✅")
     print(f"Failed:   {failures} ❌")
-    print(f"Errors:   {errors} ❌")
+    print(f"Errors:   {errors} 💥")
     print(f"Skipped:  {skipped} 💤")
     print("====================")
     print()
 
     summary = f"""# ✅ Test Summary
 
+**Stats:**
 - **Total**: `{total}`
-- **Passed**: `{passed}`
-- **Failed**: `{failures}`
-- **Errors**: `{errors}`
-- **Skipped**: `{skipped}`
+- **Passed**: `{passed} ✅`
+- **Failed**: `{failures} ❌`
+- **Errors**: `{errors} 💥`
+- **Skipped**: `{skipped} 💤`
+
+**Top 5 slowest tests:**
 """
+
+    slow_tests = sorted(test_details, key=lambda x: x["time"], reverse=True)[:5]
+    for test in slow_tests:
+        status_emoji = {"passed": "✅", "failed": "❌", "error": "💥", "skipped": "💤"}.get(test["status"], "⚪")
+        summary += f"- `{test['classname']}.{test['name']}` **{test['time']:.2f}s** {status_emoji}\n"
+
+    if failures + errors > 0:
+        summary += f"\n**Failed tests ({failures + errors}):**\n"
+        failed_tests = [t for t in test_details if t["status"] in ["failed", "error"]]
+        for test in failed_tests:
+            summary += f"- `{test['classname']}.{test['name']}` **{test['time']:.2f}s** ❌\n"
 
     summary_file = Path.cwd() / os.environ.get("GITHUB_STEP_SUMMARY", "")
     if summary_file.parent.exists():
