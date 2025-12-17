@@ -85,6 +85,16 @@ def parse_traceback_line(failure_text: str, filename: str) -> int:
     return 1
 
 
+def normalize_filename(classname: str) -> str:
+    """
+    Приводит наименование файла к правильному виду, если в файле существует тестовый класс
+    """
+    if '.' in classname:
+        base_path = classname.rsplit('.', 1)[0]
+        return base_path.replace(".", "/") + ".py"
+    return "unknown.py"
+
+
 def annotate_failures(root):
     failure_count = 0
     for tc in root.findall(".//testcase"):
@@ -113,7 +123,8 @@ def annotate_failures(root):
         except ValueError:
             time = 0.0
 
-        file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
+        # file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
+        file_hint = normalize_filename(classname)
         time_str = f" ({time:.2f}s)" if time > 0 else ""
 
         print(f"🔍 DEBUG: parsing '{file_hint}' in '{failure_text[:100]}...'") # DEBUG
