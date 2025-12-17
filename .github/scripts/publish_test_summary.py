@@ -63,22 +63,22 @@ def parse_junit(path: Path):
     }
 
 
-def parse_traceback_line(message: str, filename: str) -> int:
+def parse_traceback_line(failure_text: str, filename: str) -> int:
     """
-    Извлекает номер строки из traceback в failure message
+    Извлекает номер строки из traceback в failure
     """
     simple_pattern = rf'{re.escape(filename)}:(\d+):'
-    match = re.search(simple_pattern, message)
+    match = re.search(simple_pattern, failure_text)
     if match:
         return int(match.group(1))
 
     line_pattern = r'line\s+(\d+),'
-    match = re.search(line_pattern, message)
+    match = re.search(line_pattern, failure_text)
     if match:
         return int(match.group(1))
 
     pattern = rf'File\s+"{re.escape(filename)}",\s*line\s+(\d+),'
-    match = re.search(pattern, message)
+    match = re.search(pattern, failure_text)
     if match:
         return int(match.group(1))
 
@@ -104,6 +104,7 @@ def annotate_failures(root):
 
         classname = tc.attrib.get("classname", "")
         name = tc.attrib.get("name", "")
+        failure_text = ET.tostring(failed_element, encoding='unicode')
         message = failed_element.attrib.get("message", "Test failed").strip()
 
         raw_time = tc.attrib.get("time", "0")
@@ -115,8 +116,8 @@ def annotate_failures(root):
         file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
         time_str = f" ({time:.2f}s)" if time > 0 else ""
 
-        print(f"🔍 DEBUG: parsing '{file_hint}' in '{message[:100]}...'") # DEBUG
-        error_line = parse_traceback_line(message, file_hint)
+        print(f"🔍 DEBUG: parsing '{file_hint}' in '{failure_text[:100]}...'") # DEBUG
+        error_line = parse_traceback_line(failure_text, file_hint)
         print(f"   -> found line={error_line}") # DEBUG
 
         title = f"Test failed: {name}{time_str}"
