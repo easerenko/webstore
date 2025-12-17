@@ -89,10 +89,13 @@ def normalize_filename(classname: str) -> str:
     """
     Приводит наименование файла к правильному виду, если в файле существует тестовый класс
     """
-    if '.' in classname:
-        base_path = classname.rsplit('.', 1)[0]
-        return base_path.replace(".", "/") + ".py"
-    return "unknown.py"
+    if not classname or '.' not in classname:
+        return "unknown.py"
+
+    parts = classname.rsplit('.', 1)
+    base_path = parts[0]
+
+    return base_path.replace(".", "/") + ".py"
 
 
 def annotate_failures(root):
