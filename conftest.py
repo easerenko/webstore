@@ -166,37 +166,30 @@ def pytest_runtest_makereport(item, call):
 
     if rep.when == "call" and rep.failed:
         filename = item.nodeid.split("::")[0]
-        excinfo = rep.longrepr
 
-        if hasattr(excinfo, 'traceback'):
-            tb_lines = rep.longreprtext.split('\n')
-            error_line = None
-            for line in reversed(tb_lines):
-                if 'File' in line and 'line' in line:
+        if hasattr(rep.longrepr, 'reprcrash'):
+            crash_entry = rep.longrepr.reprcrash
+            if crash_entry:
+                # Точный файл и строка из traceback
+                error_filename = crash_entry.lines[0].path
+                error_line = crash_entry.lines[0].lineno
+                print(f"::error file={error_filename} line={error_line} ::"
+                      f"❌ {item.name} crashed at {error_filename}:{error_line}")
+        else:
+            lines = rep.longreprtext.split('\n')
+            for line in lines:
+                if 'File "' in line and '", line ' in line:
+                    parts = line.split('", line ')[1].split(',')[0]
                     try:
-                        error_line = int(line.split('line ')[1].split(',')[0])
+                        lineno = int(parts)
+                        print(f"::error file={filename} line={lineno} ::❌ {item.name}")
                         break
                     except:
-                        continue
+                        pass
+            else:
+                print(f"::error file={filename} line=1 ::❌ {item.name} (unknown line)")
 
-            if error_line is None:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                if exc_tb:
-                    error_line = exc_tb.tb_lineno
-        else:
-            error_line = 1
-
-        print(f"::error file={filename} line={error_line} ::❌ ОШИБКА в {filename}:{error_line}")
         print(f"::error ::{rep.longreprtext}")
-
-        lines = rep.longreprtext.split('\n')
-        for i, line in enumerate(lines):
-            if 'File' in line and 'line' in line:
-                try:
-                    lineno = int(line.split('line ')[1].split(',')[0])
-                    print(f"::error file={filename} line={lineno} ::{line.strip()}")
-                except:
-                    pass
 
     # if rep.when == "call" and rep.failed:
     #     nodeid = item.nodeid
