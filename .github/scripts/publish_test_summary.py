@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import sys
 import xml.etree.ElementTree as ET
+import re
+
 from pathlib import Path
 
 
@@ -60,6 +62,29 @@ def parse_junit(path: Path):
         "test_details": test_details
     }
 
+
+def parse_traceback_line(message: str, filename: str) -> int:
+    """
+    Извлекает номер строки из traceback в failure message
+    """
+    simple_pattern = rf'{re.escape(filename)}:(\d+):'
+    match = re.search(simple_pattern, message)
+    if match:
+        return int(match.group(1))
+
+    line_pattern = r'line\s+(\d+),'
+    match = re.search(line_pattern, message)
+    if match:
+        return int(match.group(1))
+
+    pattern = rf'File\s+"{re.escape(filename)}",\s*line\s+(\d+),'
+    match = re.search(pattern, message)
+    if match:
+        return int(match.group(1))
+
+    return 1
+
+
 def annotate_failures(root):
     failure_count = 0
     for tc in root.findall(".//testcase"):
@@ -89,13 +114,16 @@ def annotate_failures(root):
 
         file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
         time_str = f" ({time:.2f}s)" if time > 0 else ""
-        title = f"Test failed: {name}{time_str}"
 
+        error_line = parse_traceback_line(message, file_hint)
+
+        title = f"Test failed: {name}{time_str}"
         # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
-        print(f"::error title={title} file={file_hint} ::{message}")
+        print(f"::error title={title} file={file_hint} line={error_line} ::{message}")
         failure_count += 1
 
     print(f"✅ Annotated {failure_count} failures")
+
 
 def main():
     if len(sys.argv) < 2:

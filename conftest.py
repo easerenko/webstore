@@ -159,36 +159,36 @@ def web_auth(api, web):
     api.delete_user(email=user_info["email"], password=user_info["password"])
 
 
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-
-    if rep.when == "call" and rep.failed:
-        filename = item.nodeid.split("::")[0]
-
-        if hasattr(rep.longrepr, 'reprcrash'):
-            crash_entry = rep.longrepr.reprcrash
-            if crash_entry:
-                error_filename = crash_entry.lines[0].path
-                error_line = crash_entry.lines[0].lineno
-                print(f"::error file={error_filename} line={error_line} ::"
-                      f"❌ {item.name} crashed at {error_filename}:{error_line}")
-        else:
-            lines = rep.longreprtext.split('\n')
-            for line in lines:
-                if 'File "' in line and '", line ' in line:
-                    parts = line.split('", line ')[1].split(',')[0]
-                    try:
-                        lineno = int(parts)
-                        print(f"::error file={filename} line={lineno} ::❌ {item.name}")
-                        break
-                    except:
-                        pass
-            else:
-                print(f"::error file={filename} line=1 ::❌ {item.name} (unknown line)")
-
-        print(f"::error ::{rep.longreprtext}")
+# @pytest.hookimpl(tryfirst=True, hookwrapper=True)
+# def pytest_runtest_makereport(item, call):
+#     outcome = yield
+#     rep = outcome.get_result()
+#
+#     if rep.when == "call" and rep.failed:
+#         filename = item.nodeid.split("::")[0]
+#
+#         if hasattr(rep.longrepr, 'reprcrash'):
+#             crash_entry = rep.longrepr.reprcrash
+#             if crash_entry:
+#                 error_filename = crash_entry.lines[0].path
+#                 error_line = crash_entry.lines[0].lineno
+#                 print(f"::error file={error_filename} line={error_line} ::"
+#                       f"❌ {item.name} crashed at {error_filename}:{error_line}")
+#         else:
+#             lines = rep.longreprtext.split('\n')
+#             for line in lines:
+#                 if 'File "' in line and '", line ' in line:
+#                     parts = line.split('", line ')[1].split(',')[0]
+#                     try:
+#                         lineno = int(parts)
+#                         print(f"::error file={filename} line={lineno} ::❌ {item.name}")
+#                         break
+#                     except:
+#                         pass
+#             else:
+#                 print(f"::error file={filename} line=1 ::❌ {item.name} (unknown line)")
+#
+#         print(f"::error ::{rep.longreprtext}")
 
     # if rep.when == "call" and rep.failed:
     #     nodeid = item.nodeid
