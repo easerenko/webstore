@@ -159,6 +159,7 @@ def web_auth(api, web):
     api.delete_user(email=user_info["email"], password=user_info["password"])
 
 
+# Implemented in .github/scripts/publish_test_summary.py
 # @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 # def pytest_runtest_makereport(item, call):
 #     outcome = yield
