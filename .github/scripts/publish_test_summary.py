@@ -136,10 +136,10 @@ def main():
 - **Errors**: `{errors} 💥`
 - **Skipped**: `{skipped} 💤`
 
-**Top 5 slowest tests:**
+**Top 10 slowest tests:**
 """
 
-    slow_tests = sorted(test_details, key=lambda x: x["time"], reverse=True)[:5]
+    slow_tests = sorted(test_details, key=lambda x: x["time"], reverse=True)[:10]
     for test in slow_tests:
         status_emoji = {"passed": "✅", "failed": "❌", "error": "💥", "skipped": "💤"}.get(test["status"], "⚪")
         summary += f"- `{test['classname']}.{test['name']}` **{test['time']:.2f}s** {status_emoji}\n"
