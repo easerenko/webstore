@@ -115,7 +115,9 @@ def annotate_failures(root):
         file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
         time_str = f" ({time:.2f}s)" if time > 0 else ""
 
-        error_line = parse_traceback_line(failure, file_hint)
+        print(f"🔍 DEBUG: parsing '{file_hint}' in '{message[:100]}...'") # DEBUG
+        error_line = parse_traceback_line(message, file_hint)
+        print(f"   -> found line={error_line}") # DEBUG
 
         title = f"Test failed: {name}{time_str}"
         # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
