@@ -26,11 +26,14 @@ def parse_junit(path: Path):
     else:
         suites = root.findall(".//testsuite")
 
+    total_time = 0.0
+
     for suite in suites:
         total += int(suite.attrib.get("tests", 0))
         failures += int(suite.attrib.get("failures", 0))
         errors += int(suite.attrib.get("errors", 0))
         skipped += int(suite.attrib.get("skipped", 0))
+        total_time += float(suite.attrib.get("time", 0))
 
         for tc in suite.findall(".//testcase"):
             name = tc.attrib.get("name", "unknown")
@@ -59,7 +62,8 @@ def parse_junit(path: Path):
         "failures": failures,
         "errors": errors,
         "skipped": skipped,
-        "test_details": test_details
+        "test_details": test_details,
+        "total_time": total_time
     }
 
 
@@ -171,6 +175,7 @@ def main():
     errors = stats["errors"]
     skipped = stats["skipped"]
     test_details = stats["test_details"]
+    total_time = stats["total_time"]
 
     print()
     print("=== TEST SUMMARY ===")
@@ -179,17 +184,19 @@ def main():
     print(f"Failed:   {failures} ❌")
     print(f"Errors:   {errors} 💥")
     print(f"Skipped:  {skipped} 💤")
+    print(f"Duration: {total_time:.2f}s ⏱️")
     print("====================")
     print()
 
     summary = f"""# ✅ Test Summary
 
-**Stats:**
-- **Total**: `{total}`
-- **Passed**: `{passed} ✅`
-- **Failed**: `{failures} ❌`
-- **Errors**: `{errors} 💥`
-- **Skipped**: `{skipped} 💤`
+|     |  |    |
+|------------|-------|------------|
+| **Total**  | `{total}` **Σ**| `{total_time:.2f}s` ⏱️ |
+| **Passed** | `{passed}` ✅|         |
+| **Failed** | `{failures}` ❌|       |
+| **Errors** | `{errors}` 💥|       |
+| **Skipped**| `{skipped}` 💤|      |
 
 **Top 10 slowest tests:**
 """
