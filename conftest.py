@@ -1,9 +1,11 @@
 import json
 import os
-
+import sys
 import pytest
 import logging.config
+import traceback
 
+from pathlib import Path
 from datetime import datetime
 from os import path
 from selenium import webdriver
@@ -163,13 +165,43 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
 
     if rep.when == "call" and rep.failed:
-        nodeid = item.nodeid
-        filename = nodeid.split("::")[0]
-        # filename = item.location[0]
-        lineno = item.location[1]
+        filename = item.nodeid.split("::")[0]
+        excinfo = rep.longrepr
 
-        # rel_path = filename.replace(os.getcwd() + os.sep, '')
+        if hasattr(excinfo, 'traceback'):
+            tb_lines = rep.longreprtext.split('\n')
+            error_line = None
+            for line in reversed(tb_lines):
+                if 'File' in line and 'line' in line:
+                    try:
+                        error_line = int(line.split('line ')[1].split(',')[0])
+                        break
+                    except:
+                        continue
 
-        print(f"::error file={filename},line={lineno} ::❌ ОШИБКА в {filename}:{lineno}")
-        # print(f"::error file={rel_path},line={lineno} ::❌ ОШИБКА в тесте {item.name}")
+            if error_line is None:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                if exc_tb:
+                    error_line = exc_tb.tb_lineno
+        else:
+            error_line = 1
+
+        print(f"::error file={filename} line={error_line} ::❌ ОШИБКА в {filename}:{error_line}")
         print(f"::error ::{rep.longreprtext}")
+
+        lines = rep.longreprtext.split('\n')
+        for i, line in enumerate(lines):
+            if 'File' in line and 'line' in line:
+                try:
+                    lineno = int(line.split('line ')[1].split(',')[0])
+                    print(f"::error file={filename} line={lineno} ::{line.strip()}")
+                except:
+                    pass
+
+    # if rep.when == "call" and rep.failed:
+    #     nodeid = item.nodeid
+    #     filename = nodeid.split("::")[0]
+    #     lineno = item.location[1]
+    #
+    #     print(f"::error file={filename},line={lineno} ::❌ ОШИБКА в {filename}:{lineno}")
+    #     print(f"::error ::{rep.longreprtext}")

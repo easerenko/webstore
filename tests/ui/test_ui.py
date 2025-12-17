@@ -24,6 +24,8 @@ def test_login(web, create_user, user_info):
     logging.info("Проверка загрузки главной страницы после аутентификации пользователя")
     assert web.get_current_url() == config()['source']['base_url']
 
+    assert web.get_current_url() == "https://automationexercise.com/login/"
+
 
 @allure.title("Тест куки аутентификации пользователя")
 @pytest.mark.auth
@@ -38,7 +40,6 @@ def test_user_cookies(web_auth):
 
 @allure.story("Тесты по основным сценариям заказа товара")
 class TestOrder:
-    @pytest.mark.skip
     @allure.title("Тест сценария полного заказа с оплатой")
     def test_full_order(self, web, web_auth, card_info, base_url=config()['source']['base_url']):
         home_page = HomePage(base_url=base_url, driver=web.driver)
