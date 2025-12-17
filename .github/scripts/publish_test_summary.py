@@ -190,7 +190,7 @@ def main():
 
     summary = f"""# ✅ Test Summary
 
-|     |  |    |
+| Metric     | Count | Duration   |
 |------------|-------|------------|
 | **Total**  | `{total}` **Σ**| `{total_time:.2f}s` ⏱️ |
 | **Passed** | `{passed}` ✅|         |
