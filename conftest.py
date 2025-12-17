@@ -170,7 +170,6 @@ def pytest_runtest_makereport(item, call):
         if hasattr(rep.longrepr, 'reprcrash'):
             crash_entry = rep.longrepr.reprcrash
             if crash_entry:
-                # Точный файл и строка из traceback
                 error_filename = crash_entry.lines[0].path
                 error_line = crash_entry.lines[0].lineno
                 print(f"::error file={error_filename} line={error_line} ::"
