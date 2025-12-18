@@ -7,6 +7,9 @@ from pathlib import Path
 
 
 def parse_junit(path: Path):
+    """
+    Парсинг JUnit XML файла и возврат статистики по тестам
+    """
     if not path.is_file():
         print(f"::warning ::JUnit report not found at {path}")
         return None
@@ -69,7 +72,7 @@ def parse_junit(path: Path):
 
 def parse_traceback_line(failure_text: str, filename: str) -> int:
     """
-    Извлекает номер строки из traceback в failure
+    Извлечение номера строки из traceback в failure
     """
     simple_pattern = rf'{re.escape(filename)}:(\d+):'
     match = re.search(simple_pattern, failure_text)
@@ -91,7 +94,7 @@ def parse_traceback_line(failure_text: str, filename: str) -> int:
 
 def normalize_filename(classname: str) -> str:
     """
-    Приводит наименование файла к правильному виду, если в файле существует тестовый класс
+    Приведение наименования файла к корректному виду, если в наименовании указан тестовый класс
     """
     if not classname or '.' not in classname:
         return "unknown.py"
@@ -113,6 +116,9 @@ def normalize_filename(classname: str) -> str:
 
 
 def annotate_failures(root):
+    """
+    Публикация аннотации по упавшим тестам
+    """
     failure_count = 0
     for tc in root.findall(".//testcase"):
         failure = tc.find("failure")
@@ -140,7 +146,6 @@ def annotate_failures(root):
         except ValueError:
             time = 0.0
 
-        # file_hint = classname.replace(".", "/") + ".py" if classname else "unknown.py"
         file_hint = normalize_filename(classname)
         time_str = f" ({time:.2f}s)" if time > 0 else ""
 
@@ -149,14 +154,16 @@ def annotate_failures(root):
         print(f"   -> found line={error_line}") # DEBUG
 
         title = f"Test failed: {name}{time_str}"
-        # print(f"::error title={title} ::{classname}.{name} - {message or 'test failed'}")
         print(f"::error title={title} file={file_hint} line={error_line} ::{message}")
         failure_count += 1
 
     print(f"✅ Annotated {failure_count} failures")
 
 
-def main():
+def publication_summary():
+    """
+    Подготовка отчета о результате выполнения тестов и публикация в summary
+    """
     if len(sys.argv) < 2:
         print("Usage: publish_test_summary.py junit/test-results.xml")
         sys.exit(1)
@@ -218,6 +225,7 @@ def main():
     else:
         print(summary)
 
+
 if __name__ == "__main__":
     import os
-    main()
+    publication_summary()
